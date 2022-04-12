@@ -1,9 +1,11 @@
 package main
 
 import (
-	// "fmt"
+	"fmt"
 	"html/template"
 	"os"
+	"flag"
+	"strings"
 )
 
 type Post struct {
@@ -17,12 +19,18 @@ func check(e error) {
 }
 
 func main() {
-	dat, err := os.ReadFile("./first-post.txt")
+	file := flag.String("file", " ", "parse file path")
+	flag.Parse()
+	fileName := strings.Split(*file, ".")[0]
+
+	dat, err := os.ReadFile("./" + fileName + ".txt")
     check(err)
 
 	post := Post{Content: string(dat)}
 	parsedTemplate, _ := template.ParseFiles("template.tmpl")
-	newFile, _ := os.Create("first-post.html")
+	newFile, _ := os.Create(fileName + ".html")
 	err = parsedTemplate.Execute(newFile, post)
 	check(err)
+
+	fmt.Println("Done")
 }
