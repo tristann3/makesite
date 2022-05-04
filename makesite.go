@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"html/template"
 	"os"
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/parser"
 )
 
 type Page struct {
@@ -38,19 +40,45 @@ func main() {
 			fileExtension = filePath[dotIndex:]
 		}
 
-		if fileExtension == ".txt" {
+		if fileExtension == ".txt" || fileExtension == ".md" {
 			fmt.Println(fileName + fileExtension)
 
-			data, err := ioutil.ReadFile("./" + fileName + ".txt")
+			if fileExtension == "txt" {
+				data, err := ioutil.ReadFile("./" + fileName + ".txt")
 		
+				if err != nil {
+					panic(err)
+				}
+			
+				page := Page{Content: string(data)}
+				t, _ := template.ParseFiles("template.tmpl")
+				newFile, _ := os.Create(fileName + ".html")
+				err = t.Execute(newFile, page)
+	
+				if err != nil {
+					panic(err)
+				}
+			}
+		} else if fileExtension == ".md" {
+			data, err := ioutil.ReadFile("./" + fileName + ".md")
+
 			if err != nil {
 				panic(err)
 			}
-		
-			page := Page{Content: string(data)}
+
+			extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+			parser := parser.NewWithExtensions(extensions)
+
+			md := []byte(data)
+			output := markdown.ToHTML(md, parser, nil)
+
+			fileContents := template.HTML(string(output))
+
+
+			markdownPage := Page{Content: string(fileContents)}
 			t, _ := template.ParseFiles("template.tmpl")
-			newFile, _ := os.Create(fileName + ".html")
-			err = t.Execute(newFile, page)
+			markdownFile, _ := os.Create(fileName + ".html")
+			err = t.Execute(markdownFile, markdownPage)
 
 			if err != nil {
 				panic(err)
