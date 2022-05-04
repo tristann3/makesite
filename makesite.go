@@ -2,37 +2,60 @@ package main
 
 import (
 	"fmt"
-	"html/template"
-	"os"
 	"flag"
 	"strings"
+	"io/ioutil"
+	"html/template"
+	"os"
 )
 
-type Post struct {
+type Page struct {
 	Content string
 }
 
-func check(e error) {
-    if e != nil {
-        panic(e)
-    }
-}
-
 func main() {
-	file := flag.String("file", " ", "parse file path")
+	dir := flag.String("dir", " ", "directory path flag")
 	flag.Parse()
-	
-	fileName := strings.Split(*file, ".")[0]
-	dat, err := os.ReadFile("./" + fileName + ".txt")
-    
-	check(err)
 
-	post := Post{Content: string(dat)}
-	parsedTemplate, _ := template.ParseFiles("template.tmpl")
-	newFile, _ := os.Create(fileName + ".html")
-	err = parsedTemplate.Execute(newFile, post)
-	
-	check(err)
 
-	fmt.Println("Done")
+	files, err := ioutil.ReadDir(*dir)
+
+	if err != nil {
+		panic(err)
+	}
+
+	for _, file := range files {
+		filePath := file.Name()
+		dotIndex := strings.Index(filePath, ".")
+
+		var fileName string
+		var fileExtension string
+
+		if dotIndex == -1 {
+			continue
+		} else {
+			fileName = filePath[:dotIndex]
+			fileExtension = filePath[dotIndex:]
+		}
+
+		if fileExtension == ".txt" {
+			fmt.Println(fileName + fileExtension)
+
+			data, err := ioutil.ReadFile("./" + fileName + ".txt")
+		
+			if err != nil {
+				panic(err)
+			}
+		
+			page := Page{Content: string(data)}
+			t, _ := template.ParseFiles("template.tmpl")
+			newFile, _ := os.Create(fileName + ".html")
+			err = t.Execute(newFile, page)
+
+			if err != nil {
+				panic(err)
+			}
+
+		}
+	}
 }
